@@ -11,6 +11,9 @@
 - 新增铼德 DVD+R E时代系列内置预设。
 - 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
 - 侧栏工程头卡片右侧新增软盘保存按钮。
+- CD 新增三次轨距和 `phaseCorrectionDegrees` 相位修正表；命令行新增 `--preset`。图形界面暂不支持这些字段，因此不显示带这些字段的 CD 预设。
+- 新增无品牌 CD-RW（Infodisc）内置预设，目前仅命令行可用。
+- 新增 `tools/CdRotationProbe`：通过光驱读取时序测量 CD 螺旋角度，并提供图片模板生成脚本。
 
 ### English
 
@@ -21,6 +24,9 @@
 - Added a built-in Ritek DVD+R E-Series preset.
 - New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
 - Added a floppy-disk Save button on the right of the sidebar project header.
+- Added cubic pitch and a `phaseCorrectionDegrees` phase table for CD, plus a `--preset` CLI option. The GUI does not support these fields yet, so it hides CD presets that use them.
+- Added a built-in no-name CD-RW (Infodisc) preset, currently CLI only.
+- Added `tools/CdRotationProbe`, which measures CD spiral angles from drive read timing and generates picture templates.
 
 ## [1.3.6] - 2026-11-02
 

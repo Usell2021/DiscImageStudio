@@ -80,6 +80,7 @@ CdDataRawImageTests.Run();
 CdRawImageByteOrderTests.Run();
 CdBinaryTests.Run();
 CdSimdSamplingTests.Run();
+CdCubicPitchTests.Run();
 FourLevelPreviewTests.Run();
 FourLevelDitherTests.Run();
 ThreeLevelDitherTests.Run();
@@ -166,7 +167,7 @@ static void RunStreamingGenerationTests()
 static void TestDiscPresets()
 {
     DiscPresetJsonDocument builtIn = DiscPresetJsonStore.LoadBuiltIn();
-    Equal(4, builtIn.CdPresets.Count, "built-in CD preset count");
+    Equal(5, builtIn.CdPresets.Count, "built-in CD preset count");
     Equal(8, builtIn.DvdPresets.Count, "built-in DVD preset count");
     Equal(5, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
     Equal("zh-CN", builtIn.FallbackLanguage!, "built-in preset fallback language");
@@ -381,7 +382,7 @@ static void TestDiscPresetJson()
             "user preset JSON keeps the fixed speed and channel-bit fields");
 
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, created);
-        Equal(5, merged.CdPresets.Count, "merged CD preset count");
+        Equal(6, merged.CdPresets.Count, "merged CD preset count");
         Equal(9, merged.DvdPresets.Count, "merged DVD preset count");
         Equal(6, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
         DvdDiscPresetDefinition verbatim = merged.DvdPresets.Single(

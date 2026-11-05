@@ -441,7 +441,11 @@ public partial class DiscParametersState : ObservableObject
         DiscPresetJsonDocument user)
     {
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, user);
+        // The GUI CD pipeline carries constant pitch only: applying a cubic-pitch or
+        // phase-corrected preset here would silently drop that shape and burn the wrong spiral.
+        // CLI only for now.
         List<CdDiscPreset> cdPresets = merged.CdPresets
+            .Where(value => value is { PitchLinear: 0, PitchQuadratic: 0, PitchCubic: 0, PhaseCorrectionDegrees: null })
             .Select(value => new CdDiscPreset(
                 value.Id,
                 LocalizeBuiltInText(value.DisplayName,

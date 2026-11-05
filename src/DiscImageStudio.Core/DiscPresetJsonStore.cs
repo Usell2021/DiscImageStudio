@@ -20,7 +20,17 @@ public sealed record CdDiscPresetDefinition(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? DescriptionResourceKey = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? Contributor = null);
+    string? Contributor = null,
+    // Zero keeps constant pitch and is left out of the file, so existing presets round-trip unchanged.
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    double PitchLinear = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    double PitchQuadratic = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    double PitchCubic = 0,
+    // Measured angle in degrees, evenly spaced over the track and interpolated linearly.
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double[]? PhaseCorrectionDegrees = null);
 
 public sealed record DvdDiscPresetDefinition(
     string Id,
@@ -342,6 +352,20 @@ public static class DiscPresetJsonStore
                 preset.Id,
                 "linearVelocityMmPerSecond",
                 preset.LinearVelocityMmPerSecond);
+            try
+            {
+                DvdTrackGeometry.ValidatePitchCoefficients(preset.PitchLinear, preset.PitchQuadratic, preset.PitchCubic);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new InvalidDataException($"预设 '{preset.Id}' 的轨距系数无效：{exception.Message}", exception);
+            }
+
+            if (preset.PhaseCorrectionDegrees is { } table
+                && (table.Length < 2 || !table.All(double.IsFinite)))
+            {
+                throw InvalidValue(preset.Id, "phaseCorrectionDegrees", "至少需要两个有限数值");
+            }
         }
 
         foreach (DvdDiscPresetDefinition? preset in document.DvdPresets)

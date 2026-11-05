@@ -10,12 +10,16 @@ public sealed class CdDiscModule : IOpticalDiscModule
 
     private static readonly IReadOnlyList<DiscOptionDefinition> GeometryOptions =
     [
+        new("preset", "Built-in CD preset id; explicit geometry options override it", DiscOptionValueType.String),
         new("r0", "Inner radius", DiscOptionValueType.Decimal, DefaultValue: "24.5", Unit: "mm"),
         new("r1", "Outer radius", DiscOptionValueType.Decimal, DefaultValue: "56.8", Unit: "mm"),
         new("sectors", "Program sectors", DiscOptionValueType.Integer, DefaultValue: "359849"),
         new("velocity", "Linear velocity", DiscOptionValueType.Decimal, DefaultValue: "1200", Unit: "mm/s"),
         new("theta0", "Start angle", DiscOptionValueType.Decimal, DefaultValue: "0", Unit: "degrees"),
         new("outer", "Image outer radius", DiscOptionValueType.Decimal, DefaultValue: "57.5", Unit: "mm"),
+        new("pitch-linear", "Radial pitch linear coefficient", DiscOptionValueType.Decimal, DefaultValue: "0"),
+        new("pitch-quadratic", "Radial pitch quadratic coefficient", DiscOptionValueType.Decimal, DefaultValue: "0"),
+        new("pitch-cubic", "Radial pitch cubic coefficient", DiscOptionValueType.Decimal, DefaultValue: "0"),
     ];
 
     /// <summary>Second parameter set of the geometry preview: the disc the reader follows.
@@ -233,8 +237,31 @@ public sealed class CdDiscModule : IOpticalDiscModule
             output);
     }
 
+    private static CdDiscParameters? ReadPreset(CdCommandOptions options)
+    {
+        string id = options.GetString("preset", string.Empty).Trim();
+        if (id.Length == 0)
+        {
+            return null;
+        }
+
+        IReadOnlyList<CdDiscPresetDefinition> presets = DiscPresetJsonStore.LoadBuiltIn().CdPresets;
+        CdDiscPresetDefinition preset = presets.FirstOrDefault(value => value.Id == id)
+            ?? throw new ArgumentException(
+                $"Unknown CD preset '{id}'. Available: {string.Join(", ", presets.Select(value => value.Id))}.");
+        return new CdDiscParameters(
+            preset.InnerRadiusMm,
+            preset.OuterRadiusMm,
+            preset.Sectors,
+            PitchLinear: preset.PitchLinear,
+            PitchQuadratic: preset.PitchQuadratic,
+            PitchCubic: preset.PitchCubic,
+            PhaseCorrectionDegrees: preset.PhaseCorrectionDegrees);
+    }
+
     private static CdDiscParameters ReadParameters(CdCommandOptions options, CdDiscParameters? fallback = null)
     {
+        fallback = ReadPreset(options) ?? fallback;
         double startAngleDegrees = options.GetDouble("theta0", (fallback?.StartAngleRadians ?? 0) * 180.0 / Math.PI);
         return new CdDiscParameters(
             options.GetDouble("r0", fallback?.InnerRadiusMm ?? 24.5),
@@ -242,7 +269,11 @@ public sealed class CdDiscModule : IOpticalDiscModule
             options.GetLong("sectors", fallback?.Sectors ?? 359849),
             options.GetDouble("velocity", fallback?.LinearVelocityMmPerSecond ?? CdDiscParameters.StandardLinearVelocityMmPerSecond),
             startAngleDegrees * Math.PI / 180.0,
-            options.GetDouble("outer", fallback?.ImageOuterRadiusMm ?? CdDiscParameters.StandardImageOuterRadiusMm));
+            options.GetDouble("outer", fallback?.ImageOuterRadiusMm ?? CdDiscParameters.StandardImageOuterRadiusMm),
+            options.GetDouble("pitch-linear", fallback?.PitchLinear ?? 0),
+            options.GetDouble("pitch-quadratic", fallback?.PitchQuadratic ?? 0),
+            options.GetDouble("pitch-cubic", fallback?.PitchCubic ?? 0),
+            fallback?.PhaseCorrectionDegrees);
     }
 
     private static bool ReadFilePosition(CdCommandOptions options)

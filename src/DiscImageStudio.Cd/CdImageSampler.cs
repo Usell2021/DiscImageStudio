@@ -1,4 +1,5 @@
 using System.Runtime.Intrinsics;
+using DiscImageStudio.Core;
 
 namespace DiscImageStudio.Cd;
 
@@ -11,6 +12,7 @@ internal sealed class CdImageSampler
     private readonly double _innerSquared;
     private readonly double _radiusSquaredRange;
     private readonly double _angleScale;
+    private readonly DvdTrackGeometry? _variablePitch;
 
     internal CdImageSampler(RasterImage source, CdDiscParameters parameters)
         : this(parameters)
@@ -30,6 +32,7 @@ internal sealed class CdImageSampler
         _innerSquared = parameters.InnerRadiusMm * parameters.InnerRadiusMm;
         _radiusSquaredRange = (parameters.OuterRadiusMm * parameters.OuterRadiusMm) - _innerSquared;
         _angleScale = 2.0 * parameters.LinearVelocityMmPerSecond * parameters.TotalTimeSeconds / _radiusSquaredRange;
+        _variablePitch = parameters.IsConstantPitch ? null : parameters.VariablePitchGeometry;
     }
 
     internal bool SupportsSimd => Vector256.IsHardwareAccelerated
@@ -64,10 +67,29 @@ internal sealed class CdImageSampler
         Vector256<double> indices = Vector256.Create(
             (double)firstByte, (double)secondByte, (double)thirdByte, (double)fourthByte);
         Vector256<double> fraction = indices / Vector256.Create((double)_parameters.TotalBytes);
-        Vector256<double> radius = Vector256.Sqrt(Vector256.Create(_innerSquared)
-            + fraction * Vector256.Create(_radiusSquaredRange));
-        Vector256<double> angle = Vector256.Create(_parameters.StartAngleRadians)
-            + Vector256.Create(_angleScale) * (radius - Vector256.Create(_parameters.InnerRadiusMm));
+        Vector256<double> radius, angle;
+        if (_variablePitch is null)
+        {
+            radius = Vector256.Sqrt(Vector256.Create(_innerSquared)
+                + fraction * Vector256.Create(_radiusSquaredRange));
+            angle = Vector256.Create(_parameters.StartAngleRadians)
+                + Vector256.Create(_angleScale) * (radius - Vector256.Create(_parameters.InnerRadiusMm));
+        }
+        else
+        {
+            (radius, angle) = _variablePitch.AtArcLengthFast(fraction * Vector256.Create(_parameters.TrackLengthMm));
+            angle = Vector256.Create(_parameters.StartAngleRadians) + angle;
+        }
+
+        if (_parameters.PhaseCorrectionDegrees is not null)
+        {
+            angle = Vector256.Create(
+                _parameters.WithPhaseCorrection(angle.GetElement(0), fraction.GetElement(0)),
+                _parameters.WithPhaseCorrection(angle.GetElement(1), fraction.GetElement(1)),
+                _parameters.WithPhaseCorrection(angle.GetElement(2), fraction.GetElement(2)),
+                _parameters.WithPhaseCorrection(angle.GetElement(3), fraction.GetElement(3)));
+        }
+
         if (_sampleGray is not null)
         {
             // Analytic callbacks can distinguish arbitrarily close coordinates.

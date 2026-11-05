@@ -93,7 +93,11 @@ public static class CdTrackGenerator
                 effectiveTone.DitherStrength,
                 effectiveTone.Levels,
                 effectiveTone.Brightness,
-                effectiveTone.SrgbLinearization));
+                effectiveTone.SrgbLinearization,
+                parameters.PitchLinear,
+                parameters.PitchQuadratic,
+                parameters.PitchCubic,
+                parameters.PhaseCorrectionDegrees));
         return wave && writeCue
             ? summary with { CueSheetPath = CdWaveFile.WriteCue(outputFullPath) }
             : summary;

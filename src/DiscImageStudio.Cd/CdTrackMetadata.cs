@@ -22,7 +22,11 @@ public sealed record CdTrackMetadata(
     double ToneDitherStrength = 0,
     int ToneLevels = 2,
     double ToneBrightness = 0,
-    bool ToneSrgbLinearization = false)
+    bool ToneSrgbLinearization = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] double PitchLinear = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] double PitchQuadratic = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] double PitchCubic = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double[]? PhaseCorrectionDegrees = null)
 {
     internal const string FormatName = "cd-da-track-v1";
 
