@@ -2,6 +2,8 @@
 
 **简体中文** | [繁體中文](README.zh-TW.md) | [English](README.en.md) | [日本語](README.ja.md) | [Türkçe](README.tr.md) | [Español](README.es.md) | [Čeština](README.cs.md)
 
+**[Быстрый старт на русском: картинка на CD-RW (Linux, ветка `cd-cubic-pitch`)](https://github.com/Usell2021/DiscImageStudio/blob/cd-cubic-pitch/QUICKSTART_CD.ru.md)**
+
 ![Banner](docs/images/DiscImageStudio_Banner_2.png)
 
 <h2>全能的光盘盘面可见图像生成与刻录工具</h2>
